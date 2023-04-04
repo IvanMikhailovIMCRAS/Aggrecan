@@ -10,11 +10,12 @@ module OnePoint
 Contains
 
 !******************************************************************************
-subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
+subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, sigma, n_free, prn_inf, eta)
 !******************************************************************************
 	implicit none
 	integer(4),intent(in) :: Nb, n1, m1, P1, n2, m2, P2, D, n_free
 	integer(4),intent(in) :: prn_inf
+	real(8),intent(in) :: sigma
 	real(8),intent(inout) :: eta ! the step size of convergence
 	real(8) alpha(0:D+1) !Lagrange field (potential)	 
 	real(8) F ! free energy
@@ -32,11 +33,11 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 	
 	
 	
-	real(8) phi_rl(0:D+1), phi_ll(0:D+1), WB(0:D+1)
+	real(8) phi_rl(0:D+1), phi_ll(0:D+1), WB(0:D+1), phi_solv(0:D+1)
 	!!!! volume fraction profile of backbones
 	real(8) phi0_rl(0:D+1), phi0_ll(0:D+1), phi_m_rl(0:D+1), phi_m_ll(0:D+1)
 	!!!! distributions of branching points
-	real(8) sigma
+	! real(8) sigma
 	!!!! partition functions
 	real(8) Qll, Qrl
 	!!!!
@@ -48,7 +49,7 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!! grafting densities:
-	sigma = 0.5*dble(D)/dble(Nb+P1*(n1-1)+P2*(n2-1))   ! grafting density 
+	! sigma = 0.5*dble(D)/dble(Nb+P1*(n1-1)+P2*(n2-1))   ! grafting density 
 	!!!!
 	iter = 0
 	deviation = dble(D)*1000000.0
@@ -78,15 +79,17 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 		!!!! express Boltzmann weight through the Lagrange field
 		WB(1:D) = exp(-alpha(1:D))   
 		!!!! initial conditions
-       	! Left loop backbone :
+       	! backbone
 		Gll_f(1,1) = WB(1)	! first segment in first layer
 		Gll_b(1:D,Nb) = WB(1:D) ! and last segment  in first layer
-		! Right loop backbone :
-		Grl_f(D,1) = WB(D)	! first segment in last layer
-		Grl_b(1:D,Nb) = WB(1:D) ! and last segment  in last layer 
+		! left 
+		! Grl_f(D,1) = WB(D)	! first segment in last layer
+		! Grl_b(1:D,Nb) = WB(1:D) ! and last segment  in last layer 
         ! Arms
 		G1arm_b(1:D,n1) = WB(1:D) ! end of arms is free   
-		G2arm_b(1:D,n2) = WB(1:D) ! end of arms is free   
+		G2arm_b(1:D,n2) = WB(1:D) ! end of arms is free 
+		!!!! volume fraction profile of solvent
+        phi_solv(1:D) = WB(1:D)  
 				
 		!!!!!!!!!! MIRROR BOUNDARY CONDITIONS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		WB(0) = WB(1); WB(D+1) = WB(D)
@@ -94,8 +97,8 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 		Gll_f(0,:) = Gll_f(1,:); Gll_f(D+1,:) = Gll_f(D,:)
 		Gll_b(0,:) = Gll_b(1,:); Gll_b(D+1,:) = Gll_b(D,:)
 		
-		Grl_f(0,:) = Grl_f(1,:); Grl_f(D+1,:) = Grl_f(D,:)
-		Grl_b(0,:) = Grl_b(1,:); Grl_b(D+1,:) = Grl_b(D,:)	
+		! Grl_f(0,:) = Grl_f(1,:); Grl_f(D+1,:) = Grl_f(D,:)
+		! Grl_b(0,:) = Grl_b(1,:); Grl_b(D+1,:) = Grl_b(D,:)	
 		
 		G1arm_b(0,:) = G1arm_b(1,:); G1arm_b(D+1,:) = G1arm_b(D,:)
 		G2arm_b(0,:) = G2arm_b(1,:); G2arm_b(D+1,:) = G2arm_b(D,:)
@@ -109,25 +112,26 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 		! walking of left loop
 		call Propagator(Nb,n1,m1,P1,n2,m2,P2,D,G1arm_b,G2arm_b,WB,Gll_b,Gll_f,G1Larm_f,G2Larm_f)
 		! walking of right loop
-		call Propagator(Nb,n1,m1,P1,n2,m2,P2,D,G1arm_b,G2arm_b,WB,Grl_b,Grl_f,G1Rarm_f,G2Rarm_f)
+		!call Propagator(Nb,n1,m1,P1,n2,m2,P2,D,G1arm_b,G2arm_b,WB,Grl_b,Grl_f,G1Rarm_f,G2Rarm_f)
 		
 			
 		
-		G1Rarm_f(0,:,:) = G1Rarm_f(1,:,:); G1Rarm_f(D+1,:,:) = G1Rarm_f(D,:,:) 
+		! G1Rarm_f(0,:,:) = G1Rarm_f(1,:,:); G1Rarm_f(D+1,:,:) = G1Rarm_f(D,:,:) 
 		G1Larm_f(0,:,:) = G1Larm_f(1,:,:); G1Larm_f(D+1,:,:) = G1Larm_f(D,:,:) 
 		
-		G2Rarm_f(0,:,:) = G2Rarm_f(1,:,:); G2Rarm_f(D+1,:,:) = G2Rarm_f(D,:,:) 
+		! G2Rarm_f(0,:,:) = G2Rarm_f(1,:,:); G2Rarm_f(D+1,:,:) = G2Rarm_f(D,:,:) 
 		G2Larm_f(0,:,:) = G2Larm_f(1,:,:); G2Larm_f(D+1,:,:) = G2Larm_f(D,:,:) 
 		
 		
 		!!!!! Calculation phi(z)  according to the Compositions law 
-		phi_rl(:) = 0.0; phi_ll(:) = 0.0
+		! phi_rl(:) = 0.0
+		phi_ll(:) = 0.0
 		!!!! segment-by-segment summation (within a backbone)
 				
 		do s = 1, P1*m1
 			!!!! branching points not accepted
 			if (modulo(s+m1/2+1,m1).ne.1.or.s.eq.1.or.s.eq.P1*m1) then
-				phi_rl(:) = phi_rl(:) + Grl_f(:,s)*Grl_b(:,s)/WB(:)
+				! phi_rl(:) = phi_rl(:) + Grl_f(:,s)*Grl_b(:,s)/WB(:)
 				phi_ll(:) = phi_ll(:) + Gll_f(:,s)*Gll_b(:,s)/WB(:)
 			endif
 		enddo
@@ -135,7 +139,7 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 		do s = P1*m1+1, Nb
 			!!!! branching points not accepted
 			if (modulo(s+m2/2+1-P1*m1,m2).ne.1.or.s.eq.1.or.s.eq.Nb) then
-				phi_rl(:) = phi_rl(:) + Grl_f(:,s)*Grl_b(:,s)/WB(:)
+				! phi_rl(:) = phi_rl(:) + Grl_f(:,s)*Grl_b(:,s)/WB(:)
 				phi_ll(:) = phi_ll(:) + Gll_f(:,s)*Gll_b(:,s)/WB(:)
 			endif
 		enddo
@@ -144,34 +148,34 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
     	do k = 1, P1
     		do s = 1, n1
 				phi_ll(:) = phi_ll(:) + G1arm_b(:,s)*G1Larm_f(:,s,k)/WB(:)
-				phi_rl(:) = phi_rl(:) + G1arm_b(:,s)*G1Rarm_f(:,s,k)/WB(:)
+				! phi_rl(:) = phi_rl(:) + G1arm_b(:,s)*G1Rarm_f(:,s,k)/WB(:)
 			enddo  
 		enddo
 		
 		do k = 1, P2
     		do s = 1, n2
 				phi_ll(:) = phi_ll(:) + G2arm_b(:,s)*G2Larm_f(:,s,k)/WB(:)
-				phi_rl(:) = phi_rl(:) + G2arm_b(:,s)*G2Rarm_f(:,s,k)/WB(:)
+				! phi_rl(:) = phi_rl(:) + G2arm_b(:,s)*G2Rarm_f(:,s,k)/WB(:)
 			enddo  
 		enddo
 		!!!! partition functions
 		Qll = sum(phi_ll(1:D))
-		Qrl = sum(phi_rl(1:D))
+		! Qrl = sum(phi_rl(1:D))
 		
 		!!!! Normalization of volume fractions (and freedom conditions)
-		phi_ll(:) = phi_ll(:) * 0.5 * dble(D) / Qll
-		phi_rl(:) = phi_rl(:) * 0.5 * dble(D) / Qrl
+		phi_ll(:) = phi_ll(:) * sigma * (Nb + P1*n1 + P2*n2) / Qll
+		! phi_rl(:) = phi_rl(:) * 0.5 * dble(D) / Qrl
 		
 		!!!! Gradient descent
 		do z = 1, D 
-			alpha(z) = alpha(z) + eta*(phi_ll(z) + phi_rl(z) - 1.0) 
+			alpha(z) = alpha(z) + eta*(phi_ll(z) + phi_solv(z) - 1.0) 
 		enddo
 		
 				
 		deviation_old = deviation
 		deviation = 0.0
        	do z = 1, D
-       		deviation = deviation + (phi_ll(z) + phi_rl(z) - 1.0)**2 
+       		deviation = deviation + (phi_ll(z) + phi_solv(z) - 1.0)**2 
         enddo
         
         deviation = sqrt(deviation)
@@ -188,17 +192,17 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 				counter = 0
 				alpha(:) = 0.0
 				
-				Grl_b(:,:) = 0.0; Grl_f(:,:) = 0.0
+				!Grl_b(:,:) = 0.0; Grl_f(:,:) = 0.0
 				Gll_b(:,:) = 0.0; Gll_f(:,:) = 0.0	    
 				G1arm_b(:,:) = 0.0; G2arm_b(:,:) = 0.0	
-				G1Rarm_f(:,:,:) = 0.0; G2Rarm_f(:,:,:) = 0.0   
+				!G1Rarm_f(:,:,:) = 0.0; G2Rarm_f(:,:,:) = 0.0   
 				G1Larm_f(:,:,:) = 0.0; G2Larm_f(:,:,:) = 0.0  
 				WB(:) = 0.0
 				
-			    deviation = dble(D)*1000000.0
 			    eta = 2.0*eta/(sqrt(5.0)+1.0) ! golden ratio
 			    write(*,'(a,I0,5x,a,E16.10,5x,a,E16.10)') &
 	&		 'iter = ', iter, 'dev = ', deviation, 'eta = ', eta	
+				deviation = dble(D)*1000000.0
 			endif
 		
 		endif
@@ -216,11 +220,12 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 	
 	if (prn_inf.ne.0) then
 	phi0_ll(:) = 0.0
+	phi0_rl(:) = 0.0
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	do s = 1, P1*m1
 		!!!! branching points not accepted
 		if (modulo(s+m1/2+1,m1).ne.1.or.s.eq.1.or.s.eq.P1*m1) then
-			phi0_ll(:) = phi0_ll(:) + Gll_f(:,s)*Gll_b(:,s)/WB(:)
+			phi0_rl(:) = phi0_rl(:) + Gll_f(:,s)*Gll_b(:,s)/WB(:)
 		endif
 	enddo
 		
@@ -233,7 +238,7 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 		
 	!!!! segment-by-segment summation (within each k-th arm)
     do k = 1, P1
-    	phi0_ll(:) = phi0_ll(:) + G1arm_b(:,1)*G1Larm_f(:,1,k)/WB(:)
+    	phi0_rl(:) = phi0_rl(:) + G1arm_b(:,1)*G1Larm_f(:,1,k)/WB(:)
 	enddo
 		
 	do k = 1, P2
@@ -241,11 +246,12 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 	enddo
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
-	phi0_ll(:) = phi0_ll(:) * 0.5 * dble(D) / Qll ! * sigma / Gll_b(1,1)
+	phi0_ll(:) = phi0_ll(:) * sigma / Gll_b(1,1)
+	phi0_rl(:) = phi0_rl(:) * sigma / Gll_b(1,1)
 	
 	
-	phi_m_ll(:) = Gll_f(:,m1*P1)*Gll_b(:,m1*P1)/WB(:)
-	phi_m_rl(:) = Gll_f(:,Nb)*Gll_b(:,Nb)/WB(:)
+	phi_m_rl(:) = Gll_f(:,m1*P1)*Gll_b(:,m1*P1)/WB(:)
+	phi_m_ll(:) = Gll_f(:,Nb)*Gll_b(:,Nb)/WB(:)
 	
 	phi_m_ll(:) = phi_m_ll(:) / Gll_b(1,1) !/ Qll * dble(Nb+n1*P1+n2*P2)
 	phi_m_rl(:) = phi_m_rl(:) / Gll_b(1,1) !/ Qll * dble(Nb+n1*P1+n2*P2)
@@ -254,7 +260,7 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 	
 	open(112,file='profile.pro')
 	do z = 1, D
-		write(112,*) z, phi0_ll(z), phi_ll(z), alpha(z)-alpha(D/2+1), phi_m_ll(z), phi_m_rl(z)
+		write(112,*) z, phi_ll(z), phi0_rl(z), phi0_ll(z), phi_m_rl(z), phi_m_ll(z), alpha(z)-alpha(D)
 	enddo
 	close(112)
 	
@@ -264,28 +270,6 @@ subroutine CalcOnePoint(Nb, n1, m1, P1, n2, m2, P2, D, n_free, prn_inf, eta)
 	
 	write(*,'(a,I0,5x,a,E16.10,5x,a,E16.10)') &
 	&		 'iter = ', iter, 'dev = ', deviation, 'eta = ', eta	
-	
-!!!!!!!!!!!!!!!!! calculation of sum(U*phi) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	AL = 0.0
-	AR = 0.0
-	do z = 1, D
-		AL = AL + alpha(z)*phi_ll(z)
-		AR = AR + alpha(z)*phi_rl(z)
-	enddo
-!!!!!!!!!!!!!!!!!! caclulation of free energy and energy parts !!!!!!!!!!!!!!!!
-	
-		
-	F = log(dble(D)) - log(Gll_b(1,1))  &
-	& - (AL + AR)*dble(Nb+P1*(n1-1)+P2*(n2-1))/dble(D) &
-	& - log(dble(Nb+P1*(n1-1)+P2*(n2-1))) 
-	
-	
-	open(78,file='F.txt',access='append')
-		write(78,'(I6,F16.8)') D, F
-	close(78)
-	!!!!!!*********!!!!!!!!!!*********!!!!!!!!!*********!!!!!!!!!********!!!***
-	
-
 	
 			
 	return

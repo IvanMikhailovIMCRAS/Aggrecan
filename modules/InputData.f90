@@ -8,9 +8,10 @@ module InputData
 Contains
 
 !******************************************************************************
-subroutine ReadInputData(Nb, n1, m1, P1, n2, m2, P2, D, n_free)
+subroutine ReadInputData(Nb, n1, m1, P1, n2, m2, P2, D, sigma, n_free)
 !******************************************************************************
 	integer(4),intent(out) :: Nb, n1, m1, P1, n2, m2, P2, D, n_free
+	real(8), intent(out) :: sigma
 	integer(4) ioer
 	
 	open(n_input,file=name_input,iostat=ioer,status='old')
@@ -31,6 +32,8 @@ subroutine ReadInputData(Nb, n1, m1, P1, n2, m2, P2, D, n_free)
 	if (ioer.ne.0) call ERROR(2)  
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	read(n_input,*,iostat=ioer) D  ! distance between walls
+	if (ioer.ne.0) call ERROR(2)
+	read(n_input,*,iostat=ioer) sigma  ! grafting density
 	if (ioer.ne.0) call ERROR(2)  
 	read(n_input,*,iostat=ioer) n_free  ! число холостых шагов сходимости
 	if (ioer.ne.0) call ERROR(2) 
@@ -42,7 +45,11 @@ subroutine ReadInputData(Nb, n1, m1, P1, n2, m2, P2, D, n_free)
 	
 	Nb = m1*P1 + m2*P2
 		
-	if (D.gt.Nb)			call ERROR(10)
+	if ((Nb + n1*P1 + n2*P2)*sigma .gt. Nb)	then
+		write(*,*) 'Error! M*sigma > backbone length! You should cange parameters ;)'
+		call ERROR(10)
+	
+	endif
 		
 	n1 = n1 + 1   !!!!!! plus one segment of backbone
 	n2 = n2 + 1   !!!!!! plus one segment of backbone

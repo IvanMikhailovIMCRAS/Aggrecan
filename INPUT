@@ -1,8 +1,9 @@
-50    | P1     |
-50    | n1      |
-5    | m1      |
-50    | P2     |
-50    | n2      |
-5     | m2      |
-300    | D      |
-1000   | n_free |
+60    | P1     | number of spacers in backbone
+3     | n1     | side chains length
+1     | m1     | spacer length
+60    | P2     |
+10    | n2     |
+1     | m2     |
+150   | D      | number of layers
+0.02  | sigma  | grafting density
+5000  | n_free | number of free iterations

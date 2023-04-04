@@ -1,5 +1,5 @@
 # имя программы:
-TARGET=../TWOCOMB
+TARGET=../Aggrecan
 
 # исходники для сборки:
 SOURCES = \
@@ -8,7 +8,7 @@ SOURCES = \
 	InputData.f90 OutputData.f90 \
         Walking.f90 \
         OnePoint.f90 \
-	TWOCOMB.f90 \
+	Aggrecan.f90 \
 
 OBJECTS=$(SOURCES:%.f90=%.o)
 

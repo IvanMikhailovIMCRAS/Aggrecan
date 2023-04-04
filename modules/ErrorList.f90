@@ -34,7 +34,7 @@ subroutine ERROR(n)
 		case(9)
 			write(n_error,'(a,I0,a)') 'ERROR ',n,'. Input: Xfinish > 1.0 !'
 		case(10)
-			write(n_error,'(a,I0,a)') 'ERROR ',n,'. Input: D > Nb !'
+			write(n_error,'(a,I0,a)') 'ERROR ',n,'. M*sigma > backbone length!'
 		case(11)
 			write(n_error,'(a,I0,a)') 'ERROR ',n,'.	New eta < tolerance !'
 		case default
